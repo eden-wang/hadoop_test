@@ -1,0 +1,7 @@
+*.swp
+*.swo
+
+.idea
+*.iml
+output
+out
