@@ -58,10 +58,31 @@ public class PartitionerExample extends Configured implements Tool
         @Override
         public int compareTo(Bean bean) {
             int ret = this.gender.toString().compareTo(bean.getGender().toString());
-//            if (ret == 0) {
-//                return this.getAge().get() - bean.getAge().get();
-//            }
+            if (ret == 0) {
+                return this.getAge().get() - bean.getAge().get();
+            }
             return ret;
+        }
+
+        @Override
+        public String toString() {
+            return this.gender.toString() + "\t" + this.age.get();
+        }
+    }
+
+
+    public static class CompositeKeyComparator extends WritableComparator {
+        public CompositeKeyComparator() {
+            super(Bean.class, true);
+        }
+        @SuppressWarnings("rawtypes")
+        @Override
+        public int compare(WritableComparable w1, WritableComparable w2) {
+            Bean k1 = (Bean)w1;
+            Bean k2 = (Bean)w2;
+
+            int result = k1.getGender().compareTo(k2.getGender());
+            return result;
         }
     }
     //Map class
@@ -87,7 +108,7 @@ public class PartitionerExample extends Configured implements Tool
 
     //Reducer class
 
-    public static class ReduceClass extends Reducer<Bean,IntWritable,Text,IntWritable>
+    public static class ReduceClass extends Reducer<Bean,IntWritable, Bean, IntWritable>
     {
         public int max = -1;
         public void reduce(Bean key, Iterable <IntWritable> values, Context context) throws IOException, InterruptedException
@@ -101,7 +122,7 @@ public class PartitionerExample extends Configured implements Tool
                 }
             }
 
-            context.write(key.getGender(), max);
+            context.write(key, max);
         }
     }
 
@@ -168,6 +189,7 @@ public class PartitionerExample extends Configured implements Tool
         job.setNumReduceTasks(6);
 //        job.setInputFormatClass(TextInputFormat.class);
 
+        job.setGroupingComparatorClass(CompositeKeyComparator.class);
 //        job.setOutputFormatClass(TextOutputFormat.class);
         job.setOutputKeyClass(Bean.class);
         job.setOutputValueClass(IntWritable.class);
